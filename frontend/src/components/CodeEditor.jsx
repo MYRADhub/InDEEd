@@ -1,11 +1,12 @@
 import Editor from "@monaco-editor/react";
 
-export default function CodeEditor() {
+export default function CodeEditor({ value, language, onChange }) {
   return (
     <Editor
       height="100%"
-      defaultLanguage="python"
-      defaultValue="# Start typing your solution here..."
+      language={language}
+      value={value}
+      onChange={onChange}
       theme="vs-dark"
       options={{
         fontSize: 14,
