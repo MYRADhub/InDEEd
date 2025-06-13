@@ -18,37 +18,35 @@ export default function App() {
     setVfs({ ...vfs }); // trigger re-render
   };
 
-  // Handlers for file/folder creation, deletion, and reset (demo logic: always under root)
+  // Handlers for file/folder creation, deletion, and reset
   const handleCreateFile = () => {
-    const fileName = prompt("Enter new file name:");
-    if (!fileName) return;
-
     const parent = selectedFile?.type === "folder" ? selectedFile : vfs;
 
-    if (!parent.children) parent.children = []; // safeguard
-    parent.children.push({
+    const newFile = {
       type: "file",
-      name: fileName,
-      content: "// New file",
-    });
+      name: "New File",
+      content: "",
+      isEditing: true,
+    };
 
-    setVfs({ ...vfs }); // trigger re-render
+    parent.children.push(newFile);
+    setSelectedFile(newFile);
+    setVfs({ ...vfs });
   };
 
   const handleCreateFolder = () => {
-    const folderName = prompt("Enter new folder name:");
-    if (!folderName) return;
-
     const parent = selectedFile?.type === "folder" ? selectedFile : vfs;
 
-    if (!parent.children) parent.children = [];
-    parent.children.push({
+    const newFolder = {
       type: "folder",
-      name: folderName,
+      name: "New Folder",
       children: [],
-    });
+      isEditing: true,
+    };
 
-    setVfs({ ...vfs }); // trigger re-render
+    parent.children.push(newFolder);
+    setSelectedFile(newFolder);
+    setVfs({ ...vfs });
   };
 
   const handleDeleteFile = () => {
@@ -89,6 +87,7 @@ export default function App() {
               onDeleteFile={handleDeleteFile}
               onCreateFolder={handleCreateFolder}
               onResetVFS={handleResetVFS}
+              setVfs={setVfs}
             />
           )}
         </div>

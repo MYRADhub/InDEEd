@@ -8,6 +8,7 @@ export default function FileExplorer({
   onDeleteFile,
   onCreateFolder,
   onResetVFS,
+  setVfs,
 }) {
   return (
     <div className="text-white text-sm overflow-y-auto h-full flex flex-col">
@@ -45,21 +46,48 @@ export default function FileExplorer({
           node={vfs}
           onSelectFile={onSelectFile}
           selectedFile={selectedFile}
+          setVfs={setVfs}
         />
       </div>
     </div>
   );
 }
 
-function TreeNode({ node, onSelectFile, selectedFile, depth = 0 }) {
+function TreeNode({ node, onSelectFile, selectedFile, setVfs, depth = 0 }) {
   const [expanded, setExpanded] = useState(true);
+  const [tempName, setTempName] = useState(node.name);
+  const isSelected = selectedFile === node;
+  const isEditing = node.isEditing;
   const indent = { paddingLeft: `${depth * 16}px` };
 
-  const isSelected = selectedFile === node;
+  const finishRename = () => {
+    if (tempName.trim()) {
+      node.name = tempName.trim();
+    }
+    delete node.isEditing;
+    setTempName(node.name); // sync with possibly changed name
+    setVfs((prev) => ({ ...prev }));
+  };
+
   const baseClasses = `cursor-pointer px-2 py-1 hover:bg-gray-700 ${isSelected ? "bg-gray-700 font-semibold" : ""}`;
 
   if (node.type === "file") {
-    return (
+    return isEditing ? (
+      <input
+        className="bg-gray-700 text-white px-2 py-1 rounded w-full"
+        style={indent}
+        value={tempName}
+        onChange={(e) => setTempName(e.target.value)}
+        onBlur={finishRename}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === "Escape") {
+            e.preventDefault();
+            finishRename();
+          }
+        }}
+        autoFocus
+      />
+    ) : (
       <div
         className={baseClasses}
         style={indent}
@@ -70,26 +98,44 @@ function TreeNode({ node, onSelectFile, selectedFile, depth = 0 }) {
     );
   }
 
-  // folder
+  // Folder
   return (
     <div>
-      <div
-        className={baseClasses}
-        style={indent}
-        onClick={() => {
-          setExpanded(!expanded);
-          onSelectFile(node); // allow selecting folders
-        }}
-      >
-        {expanded ? "📂" : "📁"} {node.name}
-      </div>
+      {isEditing ? (
+        <input
+          className="bg-gray-700 text-white px-2 py-1 rounded w-full"
+          style={indent}
+          value={tempName}
+          onChange={(e) => setTempName(e.target.value)}
+          onBlur={finishRename}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === "Escape") {
+              e.preventDefault();
+              finishRename();
+            }
+          }}
+          autoFocus
+        />
+      ) : (
+        <div
+          className={baseClasses}
+          style={indent}
+          onClick={() => {
+            setExpanded(!expanded);
+            onSelectFile(node);
+          }}
+        >
+          {expanded ? "📂" : "📁"} {node.name}
+        </div>
+      )}
       {expanded &&
         node.children.map((child, i) => (
           <TreeNode
-            key={`${node.name}-${i}`}
+            key={`${child.name || "unnamed"}-${i}`}
             node={child}
             onSelectFile={onSelectFile}
             selectedFile={selectedFile}
+            setVfs={setVfs}
             depth={depth + 1}
           />
         ))}
