@@ -1,21 +1,24 @@
 export const initialVFS = {
-  "Main.java": {
-    content: `public class Main {
-  public static void main(String[] args) {
-    System.out.println("Hello World!");
-  }
-}`,
-    visible: true,
-    readOnly: false,
-  },
-  "GameLogic.java": {
-    content: `// TODO: implement game logic`,
-    visible: true,
-    readOnly: false,
-  },
-  "GuiHelper.java": {
-    content: `// GUI logic (hidden from user)`,
-    visible: false,
-    readOnly: true,
-  },
+  type: "folder",
+  name: "root",
+  children: [
+    {
+      type: "file",
+      name: "Main.java",
+      content: "// Entry point",
+      readOnly: false,
+    },
+    {
+      type: "folder",
+      name: "utils",
+      children: [
+        {
+          type: "file",
+          name: "Helper.java",
+          content: "// Utility class",
+          readOnly: false,
+        },
+      ],
+    },
+  ],
 };

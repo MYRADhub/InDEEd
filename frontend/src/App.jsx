@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { initialVFS } from "./state/vfs";
+import { initialVFS as originalVFS } from "./state/vfs";
 import NavBar from "./components/NavBar";
 import SideBar from "./components/SideBar";
 import ExercisePanel from "./components/ExercisePanel";
@@ -8,18 +8,67 @@ import CodeEditor from "./components/CodeEditor";
 import FileExplorer from "./components/FileExplorer";
 
 export default function App() {
-  const [files, setFiles] = useState(initialVFS);
-  const [activeFile, setActiveFile] = useState("Main.java");
+  const getFreshVFS = () => structuredClone(originalVFS);
+  const [vfs, setVfs] = useState(getFreshVFS());
+  const [selectedFile, setSelectedFile] = useState(null);
   const [activePanel, setActivePanel] = useState("exercise");
 
-  const updateFileContent = (filename, newContent) => {
-    setFiles((prev) => ({
-      ...prev,
-      [filename]: {
-        ...prev[filename],
-        content: newContent,
-      },
-    }));
+  const updateFileContent = (fileNode, newContent) => {
+    fileNode.content = newContent;
+    setVfs({ ...vfs }); // trigger re-render
+  };
+
+  // Handlers for file/folder creation, deletion, and reset (demo logic: always under root)
+  const handleCreateFile = () => {
+    const fileName = prompt("Enter new file name:");
+    if (!fileName) return;
+
+    const parent = selectedFile?.type === "folder" ? selectedFile : vfs;
+
+    if (!parent.children) parent.children = []; // safeguard
+    parent.children.push({
+      type: "file",
+      name: fileName,
+      content: "// New file",
+    });
+
+    setVfs({ ...vfs }); // trigger re-render
+  };
+
+  const handleCreateFolder = () => {
+    const folderName = prompt("Enter new folder name:");
+    if (!folderName) return;
+
+    const parent = selectedFile?.type === "folder" ? selectedFile : vfs;
+
+    if (!parent.children) parent.children = [];
+    parent.children.push({
+      type: "folder",
+      name: folderName,
+      children: [],
+    });
+
+    setVfs({ ...vfs }); // trigger re-render
+  };
+
+  const handleDeleteFile = () => {
+    if (!selectedFile) return alert("No file selected.");
+    const deleteRecursively = (nodes) =>
+      nodes.filter((node) => {
+        if (node === selectedFile) return false;
+        if (node.type === "folder") {
+          node.children = deleteRecursively(node.children);
+        }
+        return true;
+      });
+    vfs.children = deleteRecursively(vfs.children);
+    setSelectedFile(null);
+    setVfs({ ...vfs });
+  };
+
+  const handleResetVFS = () => {
+    setVfs(getFreshVFS());
+    setSelectedFile(null);
   };
 
   return (
@@ -27,15 +76,19 @@ export default function App() {
       <NavBar />
       <div className="flex flex-1">
         <SideBar activePanel={activePanel} setActivePanel={setActivePanel} />
-        
-        <div className="w-1/3 p-4 border-r border-gray-300 overflow-y-auto">
+
+        <div className="w-1/3 p-4 border-r border-gray-300 overflow-y-auto bg-gray-900">
           {activePanel === "exercise" ? (
             <ExercisePanel />
           ) : (
             <FileExplorer
-              files={files}
-              activeFile={activeFile}
-              setActiveFile={setActiveFile}
+              vfs={vfs}
+              selectedFile={selectedFile}
+              onSelectFile={setSelectedFile}
+              onCreateFile={handleCreateFile}
+              onDeleteFile={handleDeleteFile}
+              onCreateFolder={handleCreateFolder}
+              onResetVFS={handleResetVFS}
             />
           )}
         </div>
@@ -43,14 +96,13 @@ export default function App() {
         <div className="w-2/3 p-4 flex flex-col">
           <div className="flex-1 bg-gray-800 text-white rounded-lg overflow-hidden">
             <CodeEditor
-              value={files[activeFile].content}
+              value={selectedFile?.content || ""}
               language="java"
-              onChange={(newContent) => updateFileContent(activeFile, newContent)}
+              onChange={(newContent) => updateFileContent(selectedFile, newContent)}
             />
           </div>
         </div>
       </div>
-
       <OutputPanel />
     </div>
   );
