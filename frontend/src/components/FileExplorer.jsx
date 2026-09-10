@@ -128,7 +128,7 @@ function TreeNode({
   return (
     <div
       onDragOver={(e) => e.preventDefault()}
-      onDragEnter={(e) => {
+      onDragEnter={() => {
         if (node.type !== "folder") return;
         const dragged = draggedNodeRef.current;
 
@@ -136,7 +136,7 @@ function TreeNode({
 
         setIsDragOver(true);
         }}
-        onDragLeave={(e) => {
+        onDragLeave={() => {
         if (node.type === "folder") setIsDragOver(false);
         }}
       onDrop={(e) => {
